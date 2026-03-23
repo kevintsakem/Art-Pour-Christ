@@ -56,7 +56,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/photos/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/videos/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
-                    .requestMatchers("/", "/api").permitAll();
+                    .requestMatchers("/", "/api").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/contact").permitAll();
                 // Console H2 uniquement en développement local
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
