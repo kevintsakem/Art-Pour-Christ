@@ -1,13 +1,58 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
+import { contactApi } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
+
+const initialForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  subject: "",
+  message: "",
+};
 
 const ContactSection = () => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [form, setForm] = useState(initialForm);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Will be implemented with backend
+    setIsLoading(true);
+    try {
+      await contactApi.submit({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone || undefined,
+        subject: form.subject,
+        message: form.message,
+      });
+      toast({
+        title: "Message envoyé !",
+        description: "Nous vous répondrons dans les plus brefs délais.",
+      });
+      setForm(initialForm);
+    } catch {
+      toast({
+        title: "Erreur d'envoi",
+        description: "Une erreur est survenue. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,41 +131,98 @@ const ContactSection = () => {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
-                      Prénom
+                      Prénom <span className="text-destructive">*</span>
                     </label>
-                    <Input placeholder="Votre prénom" />
+                    <Input
+                      name="firstName"
+                      placeholder="Votre prénom"
+                      value={form.firstName}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
-                      Nom
+                      Nom <span className="text-destructive">*</span>
                     </label>
-                    <Input placeholder="Votre nom" />
+                    <Input
+                      name="lastName"
+                      placeholder="Votre nom"
+                      value={form.lastName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Email <span className="text-destructive">*</span>
+                    </label>
+                    <Input
+                      name="email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={form.email}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Téléphone
+                    </label>
+                    <Input
+                      name="phone"
+                      type="tel"
+                      placeholder="+237 6XX XXX XXX"
+                      value={form.phone}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">
-                    Email
+                    Sujet <span className="text-destructive">*</span>
                   </label>
-                  <Input type="email" placeholder="votre@email.com" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Sujet
-                  </label>
-                  <Input placeholder="L'objet de votre message" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Message
-                  </label>
-                  <Textarea
-                    placeholder="Votre message..."
-                    className="min-h-[120px] resize-none"
+                  <Input
+                    name="subject"
+                    placeholder="L'objet de votre message"
+                    value={form.subject}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
-                <Button type="submit" variant="gold" className="w-full">
-                  <Send className="w-4 h-4" />
-                  Envoyer le message
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Message <span className="text-destructive">*</span>
+                  </label>
+                  <Textarea
+                    name="message"
+                    placeholder="Votre message..."
+                    className="min-h-[120px] resize-none"
+                    value={form.message}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="gold"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Envoi en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Envoyer le message
+                    </>
+                  )}
                 </Button>
               </form>
             </CardContent>

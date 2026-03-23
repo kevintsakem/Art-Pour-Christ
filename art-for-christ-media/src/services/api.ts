@@ -217,6 +217,24 @@ export const announcementsApi = {
     request<void>(`/announcements/${id}`, { method: 'DELETE' }),
 };
 
+// Contact API
+export interface ContactRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}
+
+export const contactApi = {
+  submit: (data: ContactRequest) =>
+    request<{ id: string }>('/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 // Dashboard Stats API
 export interface DashboardStats {
   totalPhotos: number;
