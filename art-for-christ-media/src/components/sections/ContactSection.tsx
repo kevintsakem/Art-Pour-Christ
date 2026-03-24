@@ -91,12 +91,6 @@ const ContactSection = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-primary-foreground" />
-                </div>
-    
-              </div>
 
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0">
