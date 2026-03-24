@@ -95,14 +95,7 @@ const ContactSection = () => {
                 <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0">
                   <Mail className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <div>
-                  <h3 className="font-display font-semibold text-foreground mb-1">
-                    Email
-                  </h3>
-                  <p className="text-muted-foreground">
-                    artpourchrist@meec-centre.org
-                  </p>
-                </div>
+    
               </div>
 
               <div className="flex items-start gap-4">
@@ -113,7 +106,7 @@ const ContactSection = () => {
                   <h3 className="font-display font-semibold text-foreground mb-1">
                     Téléphone
                   </h3>
-                  <p className="text-muted-foreground">+237 6XX XXX XXX</p>
+                  <p className="text-muted-foreground">+237 687 99 75 03</p>
                 </div>
               </div>
             </div>

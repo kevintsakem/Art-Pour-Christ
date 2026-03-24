@@ -51,7 +51,7 @@ const AboutSection = () => {
                 glorifier Dieu à travers les arts de la scène.
               </p>
               <p>
-                Notre équipe passionnée crée des sketches inspirants et des
+                Notre équipe passionnée crée des sketches, des chant inspirants et des
                 chorégraphies de louange qui touchent les cœurs et élèvent les
                 âmes vers notre Créateur.
               </p>
