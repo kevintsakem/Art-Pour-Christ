@@ -1,17 +1,14 @@
 package com.artpourchrist.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,39 +24,68 @@ public class FileStorageService {
             "image/jpeg", "image/png", "image/webp"
     );
 
-    @Value("${app.upload.dir}")
-    private String uploadDir;
+    private final Cloudinary cloudinary;
 
-    @Value("${app.base-url}")
-    private String baseUrl;
+    public FileStorageService() {
+        // Lit automatiquement la variable d'environnement CLOUDINARY_URL
+        this.cloudinary = new Cloudinary();
+    }
 
     public String storeImage(MultipartFile file, String subfolder) {
         validateContentType(file, ALLOWED_IMAGE_TYPES);
-        return store(file, subfolder);
+        return upload(file, subfolder, "image");
     }
 
     public String storeVideo(MultipartFile file, String subfolder) {
         validateContentType(file, ALLOWED_VIDEO_TYPES);
-        return store(file, subfolder);
+        return upload(file, subfolder, "video");
     }
 
     public String storeThumbnail(MultipartFile file, String subfolder) {
         validateContentType(file, ALLOWED_THUMBNAIL_TYPES);
-        return store(file, subfolder);
+        return upload(file, subfolder, "image");
     }
 
-    public String getUrl(String relativePath) {
-        return baseUrl + "/uploads/" + relativePath;
+    public String getUrl(String url) {
+        return url;
     }
 
-    public void delete(String relativePath) {
-        if (relativePath == null) return;
+    public void delete(String url) {
+        if (url == null || url.isEmpty()) return;
         try {
-            Path file = Paths.get(uploadDir, relativePath).toAbsolutePath();
-            Files.deleteIfExists(file);
-        } catch (IOException e) {
-            log.warn("Impossible de supprimer le fichier: {}", relativePath);
+            String publicId = extractPublicId(url);
+            String resourceType = url.contains("/video/upload/") ? "video" : "image";
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
+        } catch (Exception e) {
+            log.warn("Impossible de supprimer le fichier Cloudinary: {}", url);
         }
+    }
+
+    private String upload(MultipartFile file, String subfolder, String resourceType) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "artpourchrist/" + subfolder,
+                            "resource_type", resourceType
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible d'uploader le fichier: " + e.getMessage(), e);
+        }
+    }
+
+    private String extractPublicId(String url) {
+        // https://res.cloudinary.com/cloud/image/upload/v123/artpourchrist/photos/file.jpg
+        // → artpourchrist/photos/file
+        String[] parts = url.split("/upload/");
+        if (parts.length < 2) return url;
+        String path = parts[1];
+        path = path.replaceFirst("^v\\d+/", "");
+        int dotIndex = path.lastIndexOf('.');
+        if (dotIndex != -1) path = path.substring(0, dotIndex);
+        return path;
     }
 
     private void validateContentType(MultipartFile file, Set<String> allowedTypes) {
@@ -70,27 +96,5 @@ public class FileStorageService {
                     ". Types acceptés: " + allowedTypes
             );
         }
-    }
-
-    private String store(MultipartFile file, String subfolder) {
-        try {
-            Path directory = Paths.get(uploadDir, subfolder).toAbsolutePath();
-            Files.createDirectories(directory);
-
-            String extension = getExtension(file.getOriginalFilename());
-            String filename = UUID.randomUUID() + extension;
-            Path destination = directory.resolve(filename);
-
-            Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-
-            return subfolder + "/" + filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Impossible de stocker le fichier: " + e.getMessage(), e);
-        }
-    }
-
-    private String getExtension(String filename) {
-        if (filename == null || !filename.contains(".")) return "";
-        return filename.substring(filename.lastIndexOf(".")).toLowerCase();
     }
 }
