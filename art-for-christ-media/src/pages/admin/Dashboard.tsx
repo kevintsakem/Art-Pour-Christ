@@ -2,12 +2,30 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboardApi, DashboardStats } from '@/services/api';
-import { Image, Video, Megaphone, Activity, Loader2 } from 'lucide-react';
+import { Image, Video, Megaphone, Activity, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+
+type GroupedActivity = {
+  date: string;
+  items: DashboardStats['recentActivity'];
+};
+
+function groupByDate(activities: DashboardStats['recentActivity']): GroupedActivity[] {
+  const map = new Map<string, DashboardStats['recentActivity']>();
+  for (const a of activities) {
+    const key = new Date(a.date).toLocaleDateString('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(a);
+  }
+  return Array.from(map.entries()).map(([date, items]) => ({ date, items }));
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -97,68 +115,65 @@ export default function AdminDashboard() {
 
             {/* Recent Activity */}
             <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Activité récente
-                </CardTitle>
+              <CardHeader
+                className="cursor-pointer select-none"
+                onClick={() => setActivityOpen(o => !o)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    <CardTitle>Activité récente</CardTitle>
+                  </div>
+                  {activityOpen
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </div>
                 <CardDescription>
-                  Les dernières modifications sur votre contenu
+                  {stats?.recentActivity?.length ?? 0} action(s) — cliquez pour {activityOpen ? 'masquer' : 'afficher'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-                  <div className="space-y-4">
-                    {stats.recentActivity.map((activity, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg"
-                      >
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          {activity.type === 'photo' && <Image className="w-4 h-4 text-primary" />}
-                          {activity.type === 'video' && <Video className="w-4 h-4 text-primary" />}
-                          {activity.type === 'announcement' && (
-                            <Megaphone className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {activity.action === 'created' && 'Créé'}
-                            {activity.action === 'updated' && 'Modifié'}
-                            {activity.action === 'deleted' && 'Supprimé'}
-                            {' le '}
-                            {new Date(activity.date).toLocaleDateString('fr-FR')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Aucune activité récente. Commencez à ajouter du contenu!
-                  </p>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Backend Info */}
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-lg">Configuration Backend</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>
-                  <strong>URL API:</strong>{' '}
-                  <code className="bg-background px-2 py-1 rounded">
-                    {import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}
-                  </code>
-                </p>
-                <p className="text-muted-foreground">
-                  Créez un fichier <code>.env</code> avec <code>VITE_API_URL=votre_url</code> pour
-                  configurer l'URL de votre backend.
-                </p>
-              </CardContent>
+              {activityOpen && (
+                <CardContent>
+                  {stats?.recentActivity && stats.recentActivity.length > 0 ? (
+                    <div className="space-y-6">
+                      {groupByDate(stats.recentActivity).map(({ date, items }) => (
+                        <div key={date}>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 capitalize">
+                            {date}
+                          </p>
+                          <div className="space-y-2">
+                            {items.map((activity, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                              >
+                                <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                                  {activity.type === 'photo' && <Image className="w-4 h-4 text-primary" />}
+                                  {activity.type === 'video' && <Video className="w-4 h-4 text-primary" />}
+                                  {activity.type === 'announcement' && <Megaphone className="w-4 h-4 text-primary" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{activity.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {activity.action === 'created' && 'Créé'}
+                                    {activity.action === 'updated' && 'Modifié'}
+                                    {activity.action === 'deleted' && 'Supprimé'}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      Aucune activité récente. Commencez à ajouter du contenu!
+                    </p>
+                  )}
+                </CardContent>
+              )}
             </Card>
           </>
         )}
