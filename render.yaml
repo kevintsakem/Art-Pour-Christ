@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: artpourchrist-backend
+    runtime: docker
+    dockerfilePath: ./artpourchrist-backend/Dockerfile
+    dockerContext: ./artpourchrist-backend
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
